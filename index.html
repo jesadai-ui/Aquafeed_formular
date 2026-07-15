@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมคำนวณสูตรอาหารสัตว์น้ำ - รศ.ดร.เจษฎา อิสเหาะ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #023e8a;
+            --secondary: #0077b6;
+            --accent: #00b4d8;
+            --success: #2a9d8f;
+            --warning: #f4a261;
+            --danger: #e76f51;
+            --cream: #fffdf5; /* สีครีมอ่อนสำหรับผลลัพธ์ */
+            --dark: #1b263b;
+        }
+        
+        /* พื้นหลังสีน้ำทะเลโดดเด่น */
+        body { 
+            font-family: 'Sarabun', sans-serif; 
+            background: linear-gradient(135deg, #005f73 0%, #0a9396 50%, #94d2bd 100%);
+            background-attachment: fixed;
+            color: var(--dark); 
+            margin: 0; 
+            padding: 20px 10px; 
+            line-height: 1.6; 
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: auto; 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+        }
+
+        /* ป้ายประกาศเครดิต */
+        .credit-banner {
+            text-align: center;
+            background: linear-gradient(90deg, #023e8a, #0077b6);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(2, 62, 138, 0.3);
+        }
+        .credit-banner h1 { margin: 0; font-size: 28px; font-weight: 700; color: #caf0f8; }
+        .credit-banner p { margin: 5px 0 0 0; font-size: 20px; font-weight: 600; }
+
+        h2, h3 { color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-top: 0; }
+        
+        .section { 
+            margin-bottom: 30px; 
+            padding: 25px; 
+            background: #ffffff; 
+            border-radius: 10px; 
+            border: 1px solid #caf0f8; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        /* พื้นหลังสีครีมสำหรับกล่องผลลัพธ์ */
+        .result-section {
+            background-color: var(--cream);
+            border: 2px solid #f9e79f;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        
+        .form-group { margin-bottom: 10px; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 15px; color: #34495e; }
+        
+        input[type="number"], input[type="text"] { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #90e0ef; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+            font-family: 'Sarabun', sans-serif;
+            text-align: center; /* ตัวเลขแสดงกลางเซลล์ */
+            font-size: 15px;
+        }
+        input[type="number"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 5px rgba(2,62,138,0.3); }
+
+        /* ปุ่มต่างๆ */
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        button { 
+            font-family: 'Sarabun', sans-serif;
+            padding: 10px 18px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: all 0.3s; 
+            color: white; 
+            font-size: 15px;
+        }
+        .btn-primary { background-color: var(--primary); }
+        .btn-primary:hover { background-color: #03045e; transform: translateY(-2px); }
+        .btn-toggle { background-color: #48cae4; color: #023e8a; }
+        .btn-toggle:hover { background-color: #00b4d8; color: white; }
+        .btn-success { background-color: var(--success); font-size: 20px; width: 100%; padding: 18px; box-shadow: 0 5px 15px rgba(42,157,143,0.4); }
+        .btn-success:hover { background-color: #21867a; transform: translateY(-3px); }
+        .btn-danger { background-color: var(--danger); padding: 6px 12px; }
+
+        /* ตารางและป้องกันข้อความตกแถว */
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 800px; background: white; }
+        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: center; white-space: nowrap; }
+        th { background-color: var(--primary); color: white; font-weight: 600; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        .result-section tr:nth-child(even) { background-color: #fff9e6; } /* ลายตารางสลับในโซนผลลัพธ์ */
+
+        .hidden { display: none !important; }
+        
+        .formula-box { 
+            background: #e0fbfc; 
+            color: #023e8a; 
+            padding: 15px; 
+            border-left: 5px solid #0077b6; 
+            margin-top: 15px; 
+            border-radius: 4px;
+            font-size: 14px; 
+        }
+
+        /* Traffic Light System */
+        .analysis-box { margin-top: 25px; padding: 25px; border-radius: 10px; font-size: 16px; border: 2px solid transparent; }
+        .light-green { background-color: #e8f5e9; border-color: #4caf50; }
+        .light-yellow { background-color: #fff8e1; border-color: #ffb300; }
+        .light-red { background-color: #ffebee; border-color: #f44336; }
+        .status-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .icon-circle { width: 25px; height: 25px; border-radius: 50%; display: inline-block; }
+        .bg-green { background-color: #4caf50; box-shadow: 0 0 10px #4caf50; }
+        .bg-yellow { background-color: #ffb300; box-shadow: 0 0 10px #ffb300; }
+        .bg-red { background-color: #f44336; box-shadow: 0 0 10px #f44336; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="credit-banner">
+        <p>โปรแกรมคำนวณและประเมินสูตรอาหารสัตว์น้ำ</p>
+        <h1>ออกแบบและพัฒนาโปรแกรมโดย<br>รศ.ดร.เจษฎา อิสเหาะ มทร.สุวรรณภูมิ</h1>
+    </div>
+
+    <!-- 1. เงื่อนไขและเป้าหมาย -->
+    <div class="section">
+        <h2>1. กำหนดสเปคอาหาร (มาตรฐานขั้นต่ำ/ขั้นสูง)</h2>
+        <div class="grid-3">
+            <div class="form-group"><label>% โปรตีน (ไม่น้อยกว่า)</label><input type="number" id="target_protein" value="32"></div>
+            <div class="form-group"><label>% ไขมัน (ไม่น้อยกว่า)</label><input type="number" id="target_fat" value="4"></div>
+            <div class="form-group"><label>% ความชื้น (ไม่มากกว่า)</label><input type="number" id="target_moisture" value="12"></div>
+            <div class="form-group"><label>% เยื่อใย (ไม่มากกว่า)</label><input type="number" id="target_fiber" value="8"></div>
+            <div class="form-group"><label>DE (ไม่น้อยกว่า kcal/100g)</label><input type="number" id="target_de" value="300"></div>
+            <div class="form-group"><label>ปริมาณที่ต้องการผลิต (สภาพแห้ง กก.)</label><input type="number" id="target_amount_dry" value="100"></div>
+        </div>
+    </div>
+
+    <!-- 2. วัตถุดิบอาหารสัตว์ -->
+    <div class="section">
+        <h2>2. ตารางวัตถุดิบและสัดส่วนที่ต้องการ</h2>
+        
+        <div class="controls">
+            <button class="btn-toggle" onclick="toggleCol('col-fat')">👁️ เปิด/ปิด %ไขมัน</button>
+            <button class="btn-toggle" onclick="toggleCol('col-fiber')">👁️ เปิด/ปิด %เยื่อใย</button>
+            <button class="btn-toggle" onclick="toggleCol('col-ash')">👁️ เปิด/ปิด %เถ้า</button>
+            <button class="btn-toggle" onclick="toggleCol('col-adv')">👁️ เปิด/ปิด %คาร์บ และ DE</button>
+        </div>
+
+        <div id="formula_info" class="formula-box">
+            <b>📚 อ้างอิงสูตรการคำนวณระดับสากล:</b><br>
+            • <b>% คาร์โบไฮเดรต (NFE)</b> = 100 - (%ความชื้น + %โปรตีน + %ไขมัน + %เยื่อใย + %เถ้า)<br>
+            • <b>ค่าพลังงานย่อยได้ (Digestible Energy: DE)</b> อ้างอิงจากหลักการประเมินค่าพลังงานสำหรับสัตว์น้ำ (NRC, 1993 / 2011) โดยใช้ค่าสัมประสิทธิ์พลังงาน:<br>
+            &nbsp;&nbsp;DE (kcal/100g) = (%โปรตีน × 4.0) + (%ไขมัน × 9.0) + (%NFE × 3.0)
+        </div>
+
+        <div class="table-responsive">
+            <table id="ingredient_table">
+                <thead>
+                    <tr>
+                        <th>กลุ่ม / ชนิดวัตถุดิบ</th>
+                        <th>% ความชื้น</th>
+                        <th>% โปรตีน</th>
+                        <th class="col-fat">% ไขมัน</th>
+                        <th class="col-fiber">% เยื่อใย</th>
+                        <th class="col-ash">% เถ้า</th>
+                        <th class="col-adv">% คาร์บ (NFE)</th>
+                        <th class="col-adv">DE (kcal/100g)</th>
+                        <th>ราคา (บาท/กก.)</th>
+                        <th>สัดส่วนที่ใช้ (%)</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="ingredient_body">
+                    <!-- กลุ่มโปรตีนสูง (>= 20%) 3 ชนิด -->
+                    <tr>
+                        <td><input type="text" value="ปลาป่น (โปรตีนสูง)"></td>
+                        <td><input type="number" class="mat-moist" value="10" onchange="calcMatAuto(this)"></td>
+                        <td><input type="number" class="mat-prot" value="60" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fat"><input type="number" class="mat-fat" value="8" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fiber"><input type="number" class="mat-fiber" value="1" onchange="calcMatAuto(this)"></td>
+                        <td class="col-ash"><input type="number" class="mat-ash" value="18" onchange="calcMatAuto(this)"></td>
+                        <td class="col-adv"><input type="number" class="mat-carb" value="3" readonly style="background:#e9ecef;"></td>
+                        <td class="col-adv"><input type="number" class="mat-de" value="321" readonly style="background:#e9ecef;"></td>
+                        <td><input type="number" class="mat-price" value="35"></td>
+                        <td><input type="number" class="mat-ratio" value="20"></td>
+                        <td><button class="btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="กากถั่วเหลือง (โปรตีนสูง)"></td>
+                        <td><input type="number" class="mat-moist" value="12" onchange="calcMatAuto(this)"></td>
+                        <td><input type="number" class="mat-prot" value="44" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fat"><input type="number" class="mat-fat" value="2" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fiber"><input type="number" class="mat-fiber" value="6" onchange="calcMatAuto(this)"></td>
+                        <td class="col-ash"><input type="number" class="mat-ash" value="7" onchange="calcMatAuto(this)"></td>
+                        <td class="col-adv"><input type="number" class="mat-carb" value="29" readonly style="background:#e9ecef;"></td>
+                        <td class="col-adv"><input type="number" class="mat-de" value="281" readonly style="background:#e9ecef;"></td>
+                        <td><input type="number" class="mat-price" value="18"></td>
+                        <td><input type="number" class="mat-ratio" value="25"></td>
+                        <td><button class="btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="กากถั่วลิสง (โปรตีนสูง)"></td>
+                        <td><input type="number" class="mat-moist" value="10" onchange="calcMatAuto(this)"></td>
+                        <td><input type="number" class="mat-prot" value="40" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fat"><input type="number" class="mat-fat" value="5" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fiber"><input type="number" class="mat-fiber" value="5" onchange="calcMatAuto(this)"></td>
+                        <td class="col-ash"><input type="number" class="mat-ash" value="5" onchange="calcMatAuto(this)"></td>
+                        <td class="col-adv"><input type="number" class="mat-carb" value="35" readonly style="background:#e9ecef;"></td>
+                        <td class="col-adv"><input type="number" class="mat-de" value="310" readonly style="background:#e9ecef;"></td>
+                        <td><input type="number" class="mat-price" value="16"></td>
+                        <td><input type="number" class="mat-ratio" value="10"></td>
+                        <td><button class="btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+                    
+                    <!-- กลุ่มโปรตีนต่ำ (< 20%) 4 ชนิด -->
+                    <tr>
+                        <td><input type="text" value="รำละเอียด (โปรตีนต่ำ)"></td>
+                        <td><input type="number" class="mat-moist" value="11" onchange="calcMatAuto(this)"></td>
+                        <td><input type="number" class="mat-prot" value="12" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fat"><input type="number" class="mat-fat" value="12" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fiber"><input type="number" class="mat-fiber" value="8" onchange="calcMatAuto(this)"></td>
+                        <td class="col-ash"><input type="number" class="mat-ash" value="10" onchange="calcMatAuto(this)"></td>
+                        <td class="col-adv"><input type="number" class="mat-carb" value="47" readonly style="background:#e9ecef;"></td>
+                        <td class="col-adv"><input type="number" class="mat-de" value="297" readonly style="background:#e9ecef;"></td>
+                        <td><input type="number" class="mat-price" value="10"></td>
+                        <td><input type="number" class="mat-ratio" value="15"></td>
+                        <td><button class="btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="ปลายข้าว (โปรตีนต่ำ)"></td>
+                        <td><input type="number" class="mat-moist" value="12" onchange="calcMatAuto(this)"></td>
+                        <td><input type="number" class="mat-prot" value="8" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fat"><input type="number" class="mat-fat" value="1" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fiber"><input type="number" class="mat-fiber" value="1" onchange="calcMatAuto(this)"></td>
+                        <td class="col-ash"><input type="number" class="mat-ash" value="2" onchange="calcMatAuto(this)"></td>
+                        <td class="col-adv"><input type="number" class="mat-carb" value="76" readonly style="background:#e9ecef;"></td>
+                        <td class="col-adv"><input type="number" class="mat-de" value="269" readonly style="background:#e9ecef;"></td>
+                        <td><input type="number" class="mat-price" value="12"></td>
+                        <td><input type="number" class="mat-ratio" value="15"></td>
+                        <td><button class="btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="ข้าวโพด (โปรตีนต่ำ)"></td>
+                        <td><input type="number" class="mat-moist" value="12" onchange="calcMatAuto(this)"></td>
+                        <td><input type="number" class="mat-prot" value="9" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fat"><input type="number" class="mat-fat" value="4" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fiber"><input type="number" class="mat-fiber" value="2" onchange="calcMatAuto(this)"></td>
+                        <td class="col-ash"><input type="number" class="mat-ash" value="1" onchange="calcMatAuto(this)"></td>
+                        <td class="col-adv"><input type="number" class="mat-carb" value="72" readonly style="background:#e9ecef;"></td>
+                        <td class="col-adv"><input type="number" class="mat-de" value="288" readonly style="background:#e9ecef;"></td>
+                        <td><input type="number" class="mat-price" value="11"></td>
+                        <td><input type="number" class="mat-ratio" value="0"></td>
+                        <td><button class="btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="มันสำปะหลัง (โปรตีนต่ำ)"></td>
+                        <td><input type="number" class="mat-moist" value="12" onchange="calcMatAuto(this)"></td>
+                        <td><input type="number" class="mat-prot" value="2" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fat"><input type="number" class="mat-fat" value="1" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fiber"><input type="number" class="mat-fiber" value="3" onchange="calcMatAuto(this)"></td>
+                        <td class="col-ash"><input type="number" class="mat-ash" value="2" onchange="calcMatAuto(this)"></td>
+                        <td class="col-adv"><input type="number" class="mat-carb" value="80" readonly style="background:#e9ecef;"></td>
+                        <td class="col-adv"><input type="number" class="mat-de" value="257" readonly style="background:#e9ecef;"></td>
+                        <td><input type="number" class="mat-price" value="8"></td>
+                        <td><input type="number" class="mat-ratio" value="10"></td>
+                        <td><button class="btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+
+                    <!-- กลุ่มไม่ให้โปรตีน (0%) 3 ชนิด -->
+                    <tr>
+                        <td><input type="text" value="น้ำมันปลา/พืช (0 โปรตีน)"></td>
+                        <td><input type="number" class="mat-moist" value="0" onchange="calcMatAuto(this)"></td>
+                        <td><input type="number" class="mat-prot" value="0" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fat"><input type="number" class="mat-fat" value="100" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fiber"><input type="number" class="mat-fiber" value="0" onchange="calcMatAuto(this)"></td>
+                        <td class="col-ash"><input type="number" class="mat-ash" value="0" onchange="calcMatAuto(this)"></td>
+                        <td class="col-adv"><input type="number" class="mat-carb" value="0" readonly style="background:#e9ecef;"></td>
+                        <td class="col-adv"><input type="number" class="mat-de" value="900" readonly style="background:#e9ecef;"></td>
+                        <td><input type="number" class="mat-price" value="45"></td>
+                        <td><input type="number" class="mat-ratio" value="2"></td>
+                        <td><button class="btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="พรีมิกซ์/วิตามิน (0 โปรตีน)"></td>
+                        <td><input type="number" class="mat-moist" value="5" onchange="calcMatAuto(this)"></td>
+                        <td><input type="number" class="mat-prot" value="0" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fat"><input type="number" class="mat-fat" value="0" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fiber"><input type="number" class="mat-fiber" value="0" onchange="calcMatAuto(this)"></td>
+                        <td class="col-ash"><input type="number" class="mat-ash" value="95" onchange="calcMatAuto(this)"></td>
+                        <td class="col-adv"><input type="number" class="mat-carb" value="0" readonly style="background:#e9ecef;"></td>
+                        <td class="col-adv"><input type="number" class="mat-de" value="0" readonly style="background:#e9ecef;"></td>
+                        <td><input type="number" class="mat-price" value="150"></td>
+                        <td><input type="number" class="mat-ratio" value="1"></td>
+                        <td><button class="btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" value="สารเหนียว/สารเร่งสี (0 โปรตีน)"></td>
+                        <td><input type="number" class="mat-moist" value="10" onchange="calcMatAuto(this)"></td>
+                        <td><input type="number" class="mat-prot" value="0" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fat"><input type="number" class="mat-fat" value="0" onchange="calcMatAuto(this)"></td>
+                        <td class="col-fiber"><input type="number" class="mat-fiber" value="0" onchange="calcMatAuto(this)"></td>
+                        <td class="col-ash"><input type="number" class="mat-ash" value="10" onchange="calcMatAuto(this)"></td>
+                        <td class="col-adv"><input type="number" class="mat-carb" value="80" readonly style="background:#e9ecef;"></td>
+                        <td class="col-adv"><input type="number" class="mat-de" value="240" readonly style="background:#e9ecef;"></td>
+                        <td><input type="number" class="mat-price" value="50"></td>
+                        <td><input type="number" class="mat-ratio" value="2"></td>
+                        <td><button class="btn-danger" onclick="removeRow(this)">ลบ</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <button class="btn-primary" style="margin-top: 15px;" onclick="addRow()">+ เพิ่มวัตถุดิบแถวใหม่</button>
+    </div>
+
+    <!-- 3. ข้อมูลเศรษฐศาสตร์ -->
+    <div class="section">
+        <h2>3. ข้อมูลป้อนเพื่อการประเมินเศรษฐศาสตร์</h2>
+        <div class="grid-3">
+            <div class="form-group"><label>อัตราการเปลี่ยนอาหารเป็นเนื้อ (FCR)</label><input type="number" id="fcr" value="1.5" step="0.1"></div>
+            <div class="form-group"><label>ต้นทุนอาหารคิดเป็นร้อยละของต้นทุนรวม (%)</label><input type="number" id="cost_ratio" value="70"></div>
+            <div class="form-group"><label>ราคาสัตว์น้ำที่คาดว่าจะขายได้ (บาท/กก.)</label><input type="number" id="sell_price" value="65"></div>
+        </div>
+    </div>
+
+    <button class="btn-success" onclick="calculateAll()">📊 ประมวลผลและแสดงบทวิเคราะห์ทั้งหมด</button>
+
+    <!-- 4. ผลลัพธ์ (สีครีมอ่อน) -->
+    <div id="results_section" class="section result-section hidden" style="margin-top: 30px;">
+        <h2>📋 สรุปผลการคำนวณและประเมินสูตรอาหาร</h2>
+        
+        <h3>4.1 คุณค่าทางโภชนาการของอาหารที่ผสมได้ (As-Fed / สภาพแห้ง)</h3>
+        <div class="table-responsive">
+            <table>
+                <tr>
+                    <th>% โปรตีน</th><th>% ไขมัน</th><th>% เยื่อใย</th><th>% เถ้า</th><th>% ความชื้นรวม</th><th>ค่า DE<br><small>(kcal/100g)</small></th><th>อัตราส่วน DE/P<br><small>(kcal/g protein)</small></th>
+                </tr>
+                <tr style="font-weight:bold; color:var(--primary);">
+                    <td id="res_protein">-</td><td id="res_fat">-</td><td id="res_fiber">-</td><td id="res_ash">-</td><td id="res_moisture">-</td><td id="res_de">-</td><td id="res_dep">-</td>
+                </tr>
+            </table>
+        </div>
+
+        <h3>4.2 ปริมาณวัตถุดิบที่ต้องใช้ผสม</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ชื่อวัตถุดิบ</th>
+                        <th>ใช้ในสภาพแห้ง (กก.) <br><small>(ความชื้นอ้างอิงตามเป้าหมาย)</small></th>
+                        <th>ใช้ตามความชื้นจริงที่ปรากฏ (กก.) <br><small>(As-Fed Basis)</small></th>
+                        <th>ต้นทุนวัตถุดิบต่อสูตร (บาท)</th>
+                    </tr>
+                </thead>
+                <tbody id="res_ingredient_body"></tbody>
+                <tfoot>
+                    <tr style="font-weight: bold; background-color: #f9e79f; color: #b7950b;">
+                        <td>รวมทั้งหมด</td>
+                        <td id="res_total_dry">-</td>
+                        <td id="res_total_wet">-</td>
+                        <td id="res_total_cost">-</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <h3>4.3 บทวิเคราะห์เศรษฐศาสตร์และต้นทุนการเลี้ยง</h3>
+        <div class="grid-2">
+            <div>
+                <ul>
+                    <li>ต้นทุนค่าวัตถุดิบอาหาร: <b id="res_cost_per_kg" style="color:var(--danger)">-</b> บาท/กิโลกรัม</li>
+                    <li>ต้นทุนค่าอาหารต่อการได้เนื้อ 1 กก. (ตาม FCR): <b id="res_cost_per_fish" style="color:var(--danger)">-</b> บาท</li>
+                    <li>ต้นทุนการผลิตสัตว์น้ำรวมทั้งหมด (เทียบเป็น 100%): <b id="res_total_production_cost">-</b> บาท/กก.</li>
+                </ul>
+            </div>
+            <div>
+                <ul>
+                    <li>ราคาขายสัตว์น้ำที่คาดการณ์: <b><span id="res_display_sell">-</span></b> บาท/กก.</li>
+                    <li><b>บทสรุปผลการเลี้ยง (กำไร / ขาดทุน):</b> <br><span id="res_profit" style="font-size: 26px; font-weight: bold;">-</span> บาท/กก.</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>4.4 บทสรุปภาพรวมและข้อเสนอแนะเชิงวิเคราะห์ (มาตรฐานเทียบเคียง)</h3>
+        <div id="analysis_box" class="analysis-box">
+            <div class="status-title">
+                <div id="tl_icon" class="icon-circle"></div>
+                <span id="tl_status">สถานะ: -</span>
+            </div>
+            <div id="tl_suggestion"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // เปิด-ปิด คอลัมน์
+    function toggleCol(colClass) {
+        let cols = document.querySelectorAll('.' + colClass);
+        cols.forEach(col => col.classList.toggle('hidden'));
+    }
+
+    // เพิ่ม/ลบ แถว
+    function addRow() {
+        let tbody = document.getElementById('ingredient_body');
+        let row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="text" value="วัตถุดิบใหม่"></td>
+            <td><input type="number" class="mat-moist" value="10" onchange="calcMatAuto(this)"></td>
+            <td><input type="number" class="mat-prot" value="0" onchange="calcMatAuto(this)"></td>
+            <td class="col-fat"><input type="number" class="mat-fat" value="0" onchange="calcMatAuto(this)"></td>
+            <td class="col-fiber"><input type="number" class="mat-fiber" value="0" onchange="calcMatAuto(this)"></td>
+            <td class="col-ash"><input type="number" class="mat-ash" value="0" onchange="calcMatAuto(this)"></td>
+            <td class="col-adv"><input type="number" class="mat-carb" value="90" readonly style="background:#e9ecef;"></td>
+            <td class="col-adv"><input type="number" class="mat-de" value="270" readonly style="background:#e9ecef;"></td>
+            <td><input type="number" class="mat-price" value="0"></td>
+            <td><input type="number" class="mat-ratio" value="0"></td>
+            <td><button class="btn-danger" onclick="removeRow(this)">ลบ</button></td>
+        `;
+        
+        // เช็คสถานะ hidden ปัจจุบัน
+        ['col-fat', 'col-fiber', 'col-ash', 'col-adv'].forEach(c => {
+            if(document.querySelector(`th.${c}`).classList.contains('hidden')){
+                row.querySelectorAll(`td.${c}`).forEach(td => td.classList.add('hidden'));
+            }
+        });
+        
+        tbody.appendChild(row);
+    }
+
+    function removeRow(btn) {
+        let row = btn.parentNode.parentNode;
+        row.parentNode.removeChild(row);
+    }
+
+    // คำนวณ NFE และ DE อัตโนมัติในแต่ละแถว
+    function calcMatAuto(element) {
+        let row = element.parentNode.parentNode;
+        let moist = parseFloat(row.querySelector('.mat-moist').value) || 0;
+        let prot = parseFloat(row.querySelector('.mat-prot').value) || 0;
+        let fat = parseFloat(row.querySelector('.mat-fat').value) || 0;
+        let fiber = parseFloat(row.querySelector('.mat-fiber').value) || 0;
+        let ash = parseFloat(row.querySelector('.mat-ash').value) || 0;
+        
+        // NFE = 100 - (ทั้งหมด)
+        let carb = 100 - (moist + prot + fat + fiber + ash);
+        if(carb < 0) carb = 0;
+        row.querySelector('.mat-carb').value = carb.toFixed(2);
+        
+        // DE อ้างอิง NRC สำหรับสัตว์น้ำ (Prot*4, Fat*9, NFE*3)
+        let de = (prot * 4.0) + (fat * 9.0) + (carb * 3.0);
+        row.querySelector('.mat-de').value = de.toFixed(2);
+    }
+
+    // ระบบคำนวณหลัก
+    function calculateAll() {
+        document.getElementById('results_section').classList.remove('hidden');
+
+        // สเปคเป้าหมาย
+        let tProt = parseFloat(document.getElementById('target_protein').value) || 0;
+        let tFat = parseFloat(document.getElementById('target_fat').value) || 0;
+        let tMoist = parseFloat(document.getElementById('target_moisture').value) || 0;
+        let tFiber = parseFloat(document.getElementById('target_fiber').value) || 0;
+        let tDE = parseFloat(document.getElementById('target_de').value) || 0;
+        let tAmountDry = parseFloat(document.getElementById('target_amount_dry').value) || 0;
+        
+        let rows = document.querySelectorAll('#ingredient_body tr');
+        let totalRatio = 0;
+        let ingredients = [];
+
+        rows.forEach(row => {
+            let ratio = parseFloat(row.querySelector('.mat-ratio').value) || 0;
+            totalRatio += ratio;
+            
+            ingredients.push({
+                name: row.querySelector('input[type="text"]').value,
+                moist: parseFloat(row.querySelector('.mat-moist').value) || 0,
+                prot: parseFloat(row.querySelector('.mat-prot').value) || 0,
+                fat: parseFloat(row.querySelector('.mat-fat').value) || 0,
+                fiber: parseFloat(row.querySelector('.mat-fiber').value) || 0,
+                ash: parseFloat(row.querySelector('.mat-ash').value) || 0,
+                de: parseFloat(row.querySelector('.mat-de').value) || 0,
+                price: parseFloat(row.querySelector('.mat-price').value) || 0,
+                ratio: ratio
+            });
+        });
+
+        if (totalRatio === 0) {
+            alert("กรุณาใส่สัดส่วนวัตถุดิบที่ใช้ (%) อย่างน้อย 1 รายการให้มากกว่า 0");
+            return;
+        }
+
+        let calcProt = 0, calcFat = 0, calcFiber = 0, calcAsh = 0, calcMoist = 0, calcDE = 0;
+        let resTableHTML = "";
+        let totalDryWeight = 0;
+        let totalWetWeight = 0;
+        let totalCost = 0;
+
+        ingredients.forEach(ing => {
+            let pct = (ing.ratio / totalRatio); // ปรับเป็นสัดส่วนเต็ม 1
+            
+            calcProt += ing.prot * pct;
+            calcFat += ing.fat * pct;
+            calcFiber += ing.fiber * pct;
+            calcAsh += ing.ash * pct;
+            calcMoist += ing.moist * pct;
+            calcDE += ing.de * pct;
+
+            let amountDry = tAmountDry * pct;
+            let amountWet = amountDry / ((100 - ing.moist) / 100); 
+            let cost = amountWet * ing.price;
+
+            totalDryWeight += amountDry;
+            totalWetWeight += amountWet;
+            totalCost += cost;
+
+            resTableHTML += `
+                <tr>
+                    <td>${ing.name}</td>
+                    <td>${amountDry.toFixed(2)}</td>
+                    <td>${amountWet.toFixed(2)}</td>
+                    <td>${cost.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        // แสดงผลโภชนาการ
+        document.getElementById('res_protein').innerText = calcProt.toFixed(2) + "%";
+        document.getElementById('res_fat').innerText = calcFat.toFixed(2) + "%";
+        document.getElementById('res_fiber').innerText = calcFiber.toFixed(2) + "%";
+        document.getElementById('res_ash').innerText = calcAsh.toFixed(2) + "%";
+        document.getElementById('res_moisture').innerText = calcMoist.toFixed(2) + "%";
+        document.getElementById('res_de').innerText = calcDE.toFixed(2);
+        
+        let depRatio = calcProt > 0 ? (calcDE / calcProt) : 0;
+        document.getElementById('res_dep').innerText = depRatio.toFixed(2);
+
+        // แสดงผลตารางน้ำหนัก
+        document.getElementById('res_ingredient_body').innerHTML = resTableHTML;
+        document.getElementById('res_total_dry').innerText = totalDryWeight.toFixed(2);
+        document.getElementById('res_total_wet').innerText = totalWetWeight.toFixed(2);
+        document.getElementById('res_total_cost').innerText = totalCost.toFixed(2);
+
+        // คำนวณเศรษฐศาสตร์
+        let fcr = parseFloat(document.getElementById('fcr').value) || 0;
+        let costRatio = parseFloat(document.getElementById('cost_ratio').value) || 0;
+        let sellPrice = parseFloat(document.getElementById('sell_price').value) || 0;
+
+        let costPerKgFeed = totalCost / totalWetWeight; 
+        let costFeedPerFishKg = costPerKgFeed * fcr; 
+        let totalCostPerFishKg = costFeedPerFishKg / (costRatio / 100); 
+        let profitPerKg = sellPrice - totalCostPerFishKg; 
+
+        document.getElementById('res_cost_per_kg').innerText = costPerKgFeed.toFixed(2);
+        document.getElementById('res_cost_per_fish').innerText = costFeedPerFishKg.toFixed(2);
+        document.getElementById('res_total_production_cost').innerText = totalCostPerFishKg.toFixed(2);
+        document.getElementById('res_display_sell').innerText = sellPrice.toFixed(2);
+        
+        let profitEl = document.getElementById('res_profit');
+        profitEl.innerText = profitPerKg > 0 ? "+" + profitPerKg.toFixed(2) : profitPerKg.toFixed(2);
+        profitEl.style.color = profitPerKg > 0 ? "var(--success)" : "var(--danger)";
+
+        // วิเคราะห์ภาพรวม (Traffic Light)
+        let aBox = document.getElementById('analysis_box');
+        let tIcon = document.getElementById('tl_icon');
+        let tStatus = document.getElementById('tl_status');
+        let tSug = document.getElementById('tl_suggestion');
+
+        // เคลียร์คลาสเก่า
+        aBox.className = "analysis-box";
+        tIcon.className = "icon-circle";
+
+        // ตรวจสอบความถูกต้องตามมาตรฐาน (NRC / FAO)
+        let issues = [];
+        let envImpact = [];
+        let goodPoints = [];
+
+        if(calcProt < tProt) issues.push(`โปรตีนต่ำกว่าเกณฑ์ (${calcProt.toFixed(2)}% < ${tProt}%) ส่งผลต่ออัตราการเจริญเติบโตที่ช้าลง`);
+        else goodPoints.push(`ระดับโปรตีนผ่านเกณฑ์ (${calcProt.toFixed(2)}%) เหมาะสมต่อการสร้างเนื้อเยื่อ`);
+
+        if(calcFat < tFat) issues.push(`ไขมันต่ำกว่าเกณฑ์ อาจทำให้สัตว์น้ำดึงโปรตีนไปเผาผลาญเป็นพลังงานแทน (Protein Sparing Effect ลดลง)`);
+        
+        if(calcFiber > tFiber) issues.push(`เยื่อใยสูงเกินไป (${calcFiber.toFixed(2)}% > ${tFiber}%) จะขัดขวางการย่อยและการดูดซึมสารอาหาร เพิ่มกากของเสียในน้ำ`);
+        
+        if(calcMoist > tMoist) issues.push(`ความชื้นสูงกว่า ${tMoist}% เสี่ยงต่อการเกิดเชื้อราและสารอะฟลาท็อกซิน (Aflatoxin) อายุการเก็บรักษาสั้น`);
+
+        if(calcDE < tDE) issues.push(`พลังงานย่อยได้ (DE) ต่ำกว่ามาตรฐาน ทำให้สัตว์น้ำโตช้าและ FCR สูงขึ้น`);
+
+        // วิเคราะห์ DE/P Ratio (ค่ามาตรฐาน 8-10 kcal/g protein)
+        if(depRatio < 8) {
+            envImpact.push("สัดส่วนพลังงานต่อโปรตีน (DE/P) ต่ำเกินไป สัตว์น้ำจะนำโปรตีนไปเผาผลาญเป็นพลังงาน ทำให้มี 'แอมโมเนีย' ขับทิ้งสู่แหล่งน้ำจำนวนมาก (เสื่อมโทรมเร็ว)");
+        } else if (depRatio > 11) {
+            envImpact.push("สัดส่วนพลังงาน (DE/P) สูงเกินไป สัตว์น้ำจะอิ่มเร็ว กินอาหารน้อยลง ทำให้ได้รับโปรตีนไม่พอต่อการสร้างกล้ามเนื้อ และเกิดไขมันสะสมในช่องท้อง (ซากไม่สวย)");
+        } else {
+            goodPoints.push(`อัตราส่วน DE/P (${depRatio.toFixed(2)} kcal/g) อยู่ในเกณฑ์สมดุลมาตรฐาน (8-10) ช่วยดึงโปรตีนไปสร้างเนื้อได้สูงสุด และลดปัญหาแอมโมเนียในน้ำ`);
+        }
+
+        // สรุปผลสถานะ (ไฟจราจร)
+        let isNutriPass = (calcProt >= tProt && calcFat >= tFat && calcFiber <= tFiber && calcMoist <= tMoist && calcDE >= tDE);
+
+        if (profitPerKg >= 10 && isNutriPass && depRatio >= 8 && depRatio <= 11) {
+            // GREEN
+            aBox.classList.add('light-green'); tIcon.classList.add('bg-green');
+            tStatus.innerText = "สถานะ: ยอดเยี่ยม / ปลอดภัยสูง (Green Zone)";
+            tSug.innerHTML = `<b>ข้อดี:</b> ${goodPoints.join(', ')}<br>
+            <b>ผลตอบแทน:</b> กำไรสุทธิ ${profitPerKg.toFixed(2)} บาท/กก. ถือว่ามีความคุ้มค่าเชิงพาณิชย์สูง<br>
+            <b>ข้อเสนอแนะ:</b> สามารถนำสูตรนี้ไปขึ้นไลน์ผลิตและใช้งานได้ทันที มีความเป็นมิตรต่อสิ่งแวดล้อมและคุ้มทุน`;
+        } 
+        else if (profitPerKg > 0) {
+            // YELLOW
+            aBox.classList.add('light-yellow'); tIcon.classList.add('bg-yellow');
+            tStatus.innerText = "สถานะ: ปานกลาง / ต้องเฝ้าระวัง (Yellow Zone)";
+            tSug.innerHTML = `<b>สิ่งที่ต้องปรับปรุง:</b> ${issues.length > 0 ? issues.join('<br>• ') : 'กำไรต่อกิโลกรัมค่อนข้างบาง'}<br>
+            <b>ผลกระทบแวดล้อม:</b> ${envImpact.length > 0 ? envImpact.join(' ') : 'คุณภาพน้ำยังอยู่ในเกณฑ์ควบคุมได้'}<br>
+            <b>แนวทางแก้ไข:</b> พิจารณาปรับเพิ่ม/ลดวัตถุดิบตามข้อบกพร่องด้านบน หรือหาวิธีลด FCR (เช่น การจัดการการให้อาหาร) เพื่อเพิ่ม Margin ให้กว้างขึ้น`;
+        } 
+        else {
+            // RED
+            aBox.classList.add('light-red'); tIcon.classList.add('bg-red');
+            tStatus.innerText = "สถานะ: วิกฤต / ขาดทุน (Red Zone)";
+            tSug.innerHTML = `<b>ข้อผิดพลาดร้ายแรง:</b> ${profitPerKg <= 0 ? 'ต้นทุนการผลิตสูงกว่าราคาขาย (ขาดทุน)' : ''}<br>
+            <b>ปัญหาโภชนาการ:</b> ${issues.join('<br>• ')}<br>
+            <b>ผลกระทบแวดล้อม:</b> ${envImpact.join(' ')}<br>
+            <b>แนวทางแก้ไข:</b> <u>ห้ามนำสูตรนี้ไปใช้ผลิตเด็ดขาด</u> ต้องโละสูตรใหม่โดยลดสัดส่วนวัตถุดิบราคาแพงลง และหันไปใช้วัตถุดิบทดแทน (เช่น กากพืช) พร้อมปรับสมดุลพลังงานและโปรตีนให้เข้าเกณฑ์มาตรฐานด่วน!`;
+        }
+    }
+</script>
+
+</body>
+</html>
